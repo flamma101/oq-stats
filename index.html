@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offers Quality Stats</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #0d0f12;
+      --bg-card:    #13161b;
+      --bg-input:   #1a1e25;
+      --bg-badge:   #1e2330;
+      --border:     rgba(255,255,255,0.07);
+      --border-md:  rgba(255,255,255,0.11);
+      --text:       #f0f2f5;
+      --text-2:     #8b919e;
+      --text-3:     #4e5461;
+      --accent-blue: #4f8ef7;
+      --accent-green:#34d399;
+      --accent-red:  #f87171;
+      --accent-amber:#fbbf24;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Inter', sans-serif;
+      --r-sm: 8px;
+      --r-md: 12px;
+      --r-lg: 16px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    /* ── top bar ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent-blue);
+      box-shadow: 0 0 10px var(--accent-blue);
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+    .app-title {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+    .app-sub {
+      font-size: 12px;
+      color: var(--text-3);
+      font-family: var(--mono);
+    }
+    #week-badge {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-badge);
+      border: 1px solid var(--border-md);
+      border-radius: 99px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-family: var(--mono);
+      color: var(--text-2);
+    }
+    #week-badge.visible { display: flex; }
+    #week-badge svg { flex-shrink: 0; }
+
+    /* ── upload row ── */
+    .upload-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 2rem;
+    }
+    .drop-zone {
+      border: 1px dashed var(--border-md);
+      border-radius: var(--r-lg);
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      background: var(--bg-input);
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .drop-zone::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--accent-blue) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity 0.25s;
+      pointer-events: none;
+    }
+    .drop-zone:hover { border-color: rgba(79,142,247,0.4); background: #1d2130; }
+    .drop-zone:hover::after { opacity: 0.04; }
+    .drop-zone input[type=file] { display: none; }
+    .dz-icon {
+      width: 38px; height: 38px;
+      border-radius: var(--r-sm);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .dz-icon.blue { background: rgba(79,142,247,0.12); color: var(--accent-blue); }
+    .dz-icon.green { background: rgba(52,211,153,0.12); color: var(--accent-green); }
+    .dz-team { font-size: 13px; font-weight: 600; color: var(--text); }
+    .dz-hint { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+    .file-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      background: var(--bg-badge);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 4px 10px 4px 8px;
+      font-size: 11px;
+      color: var(--text-2);
+      max-width: 100%;
+    }
+    .file-pill span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+    .pill-x {
+      cursor: pointer;
+      color: var(--text-3);
+      flex-shrink: 0;
+      display: flex; align-items: center;
+      transition: color 0.15s;
+    }
+    .pill-x:hover { color: var(--accent-red); }
+
+    /* ── empty state ── */
+    .empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 1rem;
+      text-align: center;
+      gap: 12px;
+    }
+    .empty svg { color: var(--text-3); }
+    .empty p { color: var(--text-3); font-size: 13px; }
+
+    /* ── grid ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 16px;
+    }
+
+    /* ── team card ── */
+    .team-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+    }
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-head-left { display: flex; align-items: center; gap: 12px; }
+    .team-chip {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: var(--r-sm);
+      letter-spacing: 0.04em;
+    }
+    .chip-blue  { background: rgba(79,142,247,0.15); color: var(--accent-blue); border: 1px solid rgba(79,142,247,0.25); }
+    .chip-green { background: rgba(52,211,153,0.12); color: var(--accent-green); border: 1px solid rgba(52,211,153,0.2); }
+    .card-team-name { font-size: 14px; font-weight: 600; color: var(--text); }
+    .card-head-right { font-size: 11px; color: var(--text-3); font-family: var(--mono); }
+
+    /* ── totals row ── */
+    .totals-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-bottom: 1px solid var(--border);
+    }
+    .tot-block {
+      padding: 14px 18px;
+      border-right: 1px solid var(--border);
+    }
+    .tot-block:last-child { border-right: none; }
+    .tot-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-3);
+      margin-bottom: 5px;
+    }
+    .tot-val {
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1;
+    }
+    .tot-sub {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-3);
+      margin-top: 3px;
+    }
+    .tot-val.green { color: var(--accent-green); }
+    .tot-val.red   { color: var(--accent-red); }
+
+    /* ── mailer sections ── */
+    .mailers-body { padding: 0 20px; }
+    .mailer-block { padding: 16px 0; border-bottom: 1px solid var(--border); }
+    .mailer-block:last-child { border-bottom: none; }
+    .mailer-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .mailer-avatar {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .av-blue  { background: rgba(79,142,247,0.15); color: var(--accent-blue); }
+    .av-green { background: rgba(52,211,153,0.12); color: var(--accent-green); }
+    .mailer-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .stat-lines { display: flex; flex-direction: column; gap: 7px; }
+    .stat-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .stat-left { display: flex; align-items: center; gap: 8px; }
+    .stat-pip {
+      width: 3px;
+      height: 16px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+    .pip-blue  { background: var(--accent-blue); }
+    .pip-green { background: var(--accent-green); }
+    .pip-red   { background: var(--accent-red); }
+    .stat-desc { font-size: 12px; color: var(--text-3); }
+    .stat-right {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .stat-num {
+      font-family: var(--mono);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .stat-num.green { color: var(--accent-green); }
+    .stat-num.red   { color: var(--accent-red); }
+    .stat-pct {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-3);
+    }
+    .stat-bar-wrap {
+      height: 2px;
+      background: var(--bg-input);
+      border-radius: 1px;
+      margin-top: 2px;
+      overflow: hidden;
+    }
+    .stat-bar {
+      height: 100%;
+      border-radius: 1px;
+      transition: width 0.4s ease;
+    }
+    .bar-green { background: var(--accent-green); }
+    .bar-red   { background: var(--accent-red); }
+
+    @media (max-width: 600px) {
+      body { padding: 1rem; }
+      .upload-row { grid-template-columns: 1fr; }
+      .totals-row { grid-template-columns: repeat(3,1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- top bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="logo-dot"></div>
+      <div>
+        <div class="app-title">Offers Quality Stats</div>
+        <div class="app-sub">email ops · team report</div>
+      </div>
+    </div>
+    <div id="week-badge">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span id="week-range-text"></span>
+    </div>
+  </div>
+
+  <!-- upload -->
+  <div class="upload-row">
+    <div>
+      <div class="drop-zone" onclick="document.getElementById('f1').click()">
+        <div class="dz-icon blue">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div>
+          <div class="dz-team">OT01 — CSV File</div>
+          <div class="dz-hint">Click to select file</div>
+        </div>
+        <input type="file" id="f1" accept=".csv" onchange="handleFile(event,'OT01')">
+      </div>
+      <div id="pill1"></div>
+    </div>
+    <div>
+      <div class="drop-zone" onclick="document.getElementById('f2').click()">
+        <div class="dz-icon green">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div>
+          <div class="dz-team">OT02 — CSV File</div>
+          <div class="dz-hint">Click to select file</div>
+        </div>
+        <input type="file" id="f2" accept=".csv" onchange="handleFile(event,'OT02')">
+      </div>
+      <div id="pill2"></div>
+    </div>
+  </div>
+
+  <!-- cards -->
+  <div id="cards-area">
+    <div class="empty">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      <p>Upload a CSV for OT01 and/or OT02 to generate the report</p>
+    </div>
+  </div>
+
+  <script>
+    const state = { OT01: null, OT02: null };
+
+    function fmt(n) {
+      if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'm';
+      if (n >= 1000)    return (n / 1000).toFixed(0) + 'k';
+      return Math.round(n).toString();
+    }
+
+    function initials(name) {
+      const parts = name.split('.');
+      return parts[0] ? parts[0].slice(0, 2).toUpperCase() : '??';
+    }
+
+    function parseCSV(text) {
+      const lines = text.trim().split('\n');
+      const mailers = {};
+      for (let i = 1; i < lines.length; i++) {
+        const parts = lines[i].split(';');
+        if (parts.length < 8) continue;
+        const mailer    = (parts[3] || '').trim();
+        const delivered = parseInt(parts[4]) || 0;
+        const rating    = parseInt(parts[7]) || 0;
+        if (delivered === 0) continue;
+        if (!mailers[mailer]) mailers[mailer] = { total: 0, ratingSum: 0, zeroCount: 0 };
+        const mult = rating === 5 ? 1 : rating === 4 ? 0.8 : rating === 3 ? 0.6 : rating === 2 ? 0.4 : rating === 1 ? 0.2 : 0;
+        mailers[mailer].total     += delivered;
+        mailers[mailer].ratingSum += delivered * mult;
+        if (rating === 0) mailers[mailer].zeroCount += delivered;
+      }
+      return mailers;
+    }
+
+    function handleFile(e, teamId) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const pillId = teamId === 'OT01' ? 'pill1' : 'pill2';
+      document.getElementById(pillId).innerHTML = `
+        <div class="file-pill">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span>${file.name}</span>
+          <span class="pill-x" onclick="clearTeam('${teamId}')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </span>
+        </div>`;
+
+      const match = file.name.match(/(\d{4}-\d{2}-\d{2})_(\d{4}-\d{2}-\d{2})/);
+      if (match) {
+        const fmt1 = match[1].split('-').reverse().slice(0, 2).join('/');
+        const fmt2 = match[2].split('-').reverse().slice(0, 2).join('/');
+        document.getElementById('week-range-text').textContent = `${fmt1} – ${fmt2}`;
+        document.getElementById('week-badge').classList.add('visible');
+      }
+
+      const reader = new FileReader();
+      reader.onload = ev => {
+        state[teamId] = parseCSV(ev.target.result);
+        render();
+      };
+      reader.readAsText(file);
+    }
+
+    function clearTeam(teamId) {
+      state[teamId] = null;
+      const pillId = teamId === 'OT01' ? 'pill1' : 'pill2';
+      document.getElementById(pillId).innerHTML = '';
+      document.getElementById(teamId === 'OT01' ? 'f1' : 'f2').value = '';
+      if (!state.OT01 && !state.OT02) {
+        document.getElementById('week-range-text').textContent = '';
+        document.getElementById('week-badge').classList.remove('visible');
+      }
+      render();
+    }
+
+    function renderCard(teamId, mailers) {
+      const isBlue    = teamId === 'OT01';
+      const chipClass = isBlue ? 'chip-blue' : 'chip-green';
+      const avClass   = isBlue ? 'av-blue'   : 'av-green';
+
+      let totalSent = 0, totalRating = 0, totalZero = 0;
+      for (const m of Object.values(mailers)) {
+        totalSent   += m.total;
+        totalRating += m.ratingSum;
+        totalZero   += m.zeroCount;
+      }
+      const overallPct    = totalSent > 0 ? ((totalRating / totalSent) * 100).toFixed(1) : '0.0';
+      const zeroPct       = totalSent > 0 ? ((totalZero / totalSent) * 100).toFixed(1) : '0.0';
+      const ratingBarW    = parseFloat(overallPct);
+      const zeroBarW      = parseFloat(zeroPct);
+
+      const sorted = Object.entries(mailers).sort((a, b) => b[1].total - a[1].total);
+
+      let mailersHTML = sorted.map(([name, s]) => {
+        const pct     = s.total > 0 ? ((s.ratingSum / s.total) * 100).toFixed(1) : '0.0';
+        const zPct    = s.total > 0 ? ((s.zeroCount  / s.total) * 100).toFixed(1) : '0.0';
+        const rBar    = parseFloat(pct);
+        const zBar    = parseFloat(zPct);
+        const short   = name.split('.')[0];
+        const av      = initials(name);
+        return `
+          <div class="mailer-block">
+            <div class="mailer-name-row">
+              <div class="mailer-avatar ${avClass}">${av}</div>
+              <div class="mailer-name">${short}</div>
+            </div>
+            <div class="stat-lines">
+              <div class="stat-line">
+                <div class="stat-left">
+                  <div class="stat-pip pip-blue"></div>
+                  <div class="stat-desc">Total sent</div>
+                </div>
+                <div class="stat-right">
+                  <div class="stat-num">${fmt(s.total)}</div>
+                </div>
+              </div>
+              <div class="stat-line">
+                <div class="stat-left">
+                  <div class="stat-pip pip-green"></div>
+                  <div class="stat-desc">Rated score</div>
+                </div>
+                <div class="stat-right">
+                  <div class="stat-num green">${fmt(Math.round(s.ratingSum))}</div>
+                  <div class="stat-pct">${pct}%</div>
+                </div>
+              </div>
+              <div class="stat-bar-wrap"><div class="stat-bar bar-green" style="width:${rBar}%"></div></div>
+              <div class="stat-line">
+                <div class="stat-left">
+                  <div class="stat-pip pip-red"></div>
+                  <div class="stat-desc">Zero-rated</div>
+                </div>
+                <div class="stat-right">
+                  <div class="stat-num red">${fmt(s.zeroCount)}</div>
+                  <div class="stat-pct">${zPct}%</div>
+                </div>
+              </div>
+              <div class="stat-bar-wrap"><div class="stat-bar bar-red" style="width:${zBar}%"></div></div>
+            </div>
+          </div>`;
+      }).join('');
+
+      return `
+        <div class="team-card">
+          <div class="card-head">
+            <div class="card-head-left">
+              <div class="team-chip ${chipClass}">${teamId}</div>
+              <div class="card-team-name">Team report</div>
+            </div>
+            <div class="card-head-right">${sorted.length} mailer${sorted.length !== 1 ? 's' : ''}</div>
+          </div>
+          <div class="totals-row">
+            <div class="tot-block">
+              <div class="tot-label">Total sent</div>
+              <div class="tot-val">${fmt(totalSent)}</div>
+            </div>
+            <div class="tot-block">
+              <div class="tot-label">Rated score</div>
+              <div class="tot-val green">${fmt(Math.round(totalRating))}</div>
+              <div class="tot-sub">${overallPct}%</div>
+            </div>
+            <div class="tot-block">
+              <div class="tot-label">Zero-rated</div>
+              <div class="tot-val red">${fmt(totalZero)}</div>
+              <div class="tot-sub">${zeroPct}%</div>
+            </div>
+          </div>
+          <div class="mailers-body">${mailersHTML}</div>
+        </div>`;
+    }
+
+    function render() {
+      const area = document.getElementById('cards-area');
+      if (!state.OT01 && !state.OT02) {
+        area.innerHTML = `
+          <div class="empty">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            <p>Upload a CSV for OT01 and/or OT02 to generate the report</p>
+          </div>`;
+        return;
+      }
+      let html = '<div class="cards-grid">';
+      if (state.OT01) html += renderCard('OT01', state.OT01);
+      if (state.OT02) html += renderCard('OT02', state.OT02);
+      html += '</div>';
+      area.innerHTML = html;
+    }
+  </script>
+</body>
+</html>
