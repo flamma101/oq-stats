@@ -1,1 +1,1 @@
-# qq-stats
+# oq-stats
