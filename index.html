@@ -563,5 +563,42 @@
       area.innerHTML = html;
     }
   </script>
+  <script>
+  // postMessage receiver — listens for data from gvistas Tampermonkey script
+  window.addEventListener('message', function (e) {
+    // only accept from gvistas
+    if (!e.origin.includes('localhost') && !e.origin.includes('gvistas')) return;
+    const d = e.data;
+    if (!d || d.type !== 'OQ_STATS_DATA') return;
+
+    // ACK immediately so gvistas stops polling
+    e.source.postMessage({ type: 'OQ_STATS_READY' }, e.origin);
+
+    // parse the rows into the same mailer map structure the app uses
+    const mailers = {};
+    for (const r of d.rows) {
+      if (!r.mailer || r.delivered === 0) continue;
+      if (!mailers[r.mailer]) mailers[r.mailer] = { total: 0, ratingSum: 0, zeroCount: 0 };
+      const mult = r.rating === 5 ? 1 : r.rating === 4 ? 0.8 : r.rating === 3 ? 0.6 :
+                   r.rating === 2 ? 0.4 : r.rating === 1 ? 0.2 : 0;
+      mailers[r.mailer].total     += r.delivered;
+      mailers[r.mailer].ratingSum += r.delivered * mult;
+      if (r.rating === 0) mailers[r.mailer].zeroCount += r.delivered;
+    }
+
+    // inject into app state and render
+    state[d.teamId] = mailers;
+
+    // update week badge if dates provided
+    if (d.dates?.from && d.dates?.to) {
+      const fmt = s => s.split('-').reverse().slice(0, 2).join('/');
+      document.getElementById('week-range-text').textContent =
+        `${fmt(d.dates.from)} – ${fmt(d.dates.to)}`;
+      document.getElementById('week-badge').classList.add('visible');
+    }
+
+    render();
+  });
+</script>
 </body>
 </html>
