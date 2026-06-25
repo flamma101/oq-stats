@@ -591,7 +591,10 @@
 
     // update week badge if dates provided
     if (d.dates?.from && d.dates?.to) {
-      const fmt = s => s.split('-').reverse().slice(0, 2).join('/');
+      const fmt = s => {
+      const [y, m, d] = s.split('-');
+      return `${d}/${m}`;
+    };
       document.getElementById('week-range-text').textContent =
         `${fmt(d.dates.from)} – ${fmt(d.dates.to)}`;
       document.getElementById('week-badge').classList.add('visible');
